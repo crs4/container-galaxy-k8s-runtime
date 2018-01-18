@@ -25,10 +25,11 @@ RUN apt-get -qq update && apt-get install --no-install-recommends -y apt-transpo
     && \
     pip install --upgrade pip && \
     apt-get purge -y software-properties-common && \
-    apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    apt-get autoremove --purge -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 
 # Clone galaxy into /galaxy directory
-RUN git clone --depth 1 --single-branch --branch release_17.09_plus_isa_k8s_resource_limts https://github.com/phnmnl/galaxy.git
+#RUN git clone --depth 1 --single-branch --branch release_17.09_plus_isa_k8s_resource_limts https://github.com/phnmnl/galaxy.git
+RUN git clone --depth 1 --single-branch --branch release_17.09_plus_isa_k8s_resource_limts.superlight https://github.com/crs4/galaxy.git
 WORKDIR /galaxy
 
 RUN echo "pykube==0.15.0" >> requirements.txt
@@ -50,26 +51,17 @@ RUN /bin/bash -c "source .config_script_venv/bin/activate && \
                   pip install bioblend>=0.9.0 && \
                   deactivate"
 
-
-# Clone isatools-lite (Python 2 version)
-RUN git clone --depth 1 --single-branch --branch py2_isatools-lite https://github.com/ISA-tools/isa-api.git /isatools
-
 RUN virtualenv .venv
 # We provide --extra-index-url https://pypi.python.org/simple only until the Galaxy people
 # update their wheel server to include docutils==0.14, which Galaxy 17.09 requires.
 
-RUN /bin/bash -c "apt-get update -qq && \
-                  apt-get install --no-install-recommends -y gcc-4.6 python-dev && \
-                  ln -s /usr/bin/x86_64-linux-gnu-gcc-4.6 /usr/bin/x86_64-linux-gnu-gcc && \
-                  source .venv/bin/activate && \
+RUN /bin/bash -c "source .venv/bin/activate && \
                   pip install 'pip>=8.1' && \
                   pip install -r requirements.txt \
                       --index-url https://wheels.galaxyproject.org/simple \
                       --extra-index-url https://pypi.python.org/simple && \
-                  pip install -e /isatools && \
                   deactivate && \
-                  apt-get purge -y python-dev gcc-4.6 && \
-                  apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+                  rm -rf /tmp/* /var/tmp/* /root/.cache"
 
 
 # Galaxy runs on python < 3.5, so https://github.com/kelproject/pykube/issues/29 recommends
